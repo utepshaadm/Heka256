@@ -1,10 +1,13 @@
-''' Heka256r'''
+''' Heka256'''
 ''' by KryptoMagick (Karl Zander) '''
 from random import shuffle
 
 class HEKA256:
-    def __init__(self):
-        self.deck = list(range(512))
+    def __init__(self, key=None):
+        if key == None:
+            self.deck = list(range(512))
+        else:
+        	self.deck = list(key)
         
     def gen_rand_decks(self):
     	shuffle(self.deck)
@@ -42,10 +45,3 @@ class HEKA256:
             letter = self.decrypt_letter(letters[x])
             ptxt.append(letter)
         return "".join(ptxt)
-        
-heka = HEKA256()
-heka.gen_rand_decks()
-m = [chr(65)] * 100000
-msg = "".join(m)
-ctxt = heka.encrypt(msg)
-print(ctxt)
