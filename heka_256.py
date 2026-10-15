@@ -12,6 +12,11 @@ class HEKA256:
     def gen_rand_decks(self):
     	shuffle(self.deck)
     	
+    # Nonce should be another 2 decks
+    def add_nonce(self, nonce):
+    	for x in range(512):
+    		self.deck.append(self.deck.pop(nonce[x]))
+    	
     def ksa(self):
          self.deck.append(self.deck.pop(0))
          self.deck.append(self.deck.pop(0))
