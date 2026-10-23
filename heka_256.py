@@ -1,52 +1,64 @@
-''' Heka256'''
+''' Heka256 Cipher'''
 ''' by KryptoMagick (Karl Zander) '''
-from random import shuffle
+from os import urandom
 
 class HEKA256:
-    def __init__(self, key=None):
-        if key == None:
-            self.deck = list(range(512))
-        else:
-        	self.deck = list(key)
+    def __init__(self):
+        self.deck = list(range(512))
         
-    def gen_rand_decks(self):
-    	shuffle(self.deck)
-    	
-    # Nonce should be another 2 decks
-    def add_nonce(self, nonce):
-    	for x in range(512):
-    		self.deck.append(self.deck.pop(nonce[x]))
-    	
-    def ksa(self):
-         self.deck.append(self.deck.pop(0))
-         self.deck.append(self.deck.pop(0))
+    def gen_rand_key(self, keylen=32):
+        return urandom(keylen)
+        
+    def gen_rand_nonce(self, nonce_len=16):
+        return urandom(nonce_len)
+        
+    def ksa(self, key, nonce):
+        for i in range(512):
+            self.deck.append(self.deck.pop(0))
+            self.deck.append(self.deck.pop(0))
+            posA = self.deck[0]
+            posB = key[i % len(key)]
+            self.deck[0], self.deck[posB] = self.deck[posB], self.deck[0]
+            
+        for i in range(512):
+            self.deck.append(self.deck.pop(0))
+            self.deck.append(self.deck.pop(0))
+            posA = self.deck[0]
+            posB = nonce[i % len(nonce)]
+            self.deck[0], self.deck[posB] = self.deck[posB], self.deck[0]
+    
+    def update(self):
+        self.deck.append(self.deck.pop(0))
+        self.deck.append(self.deck.pop(0))
+        posA = self.deck[0]
+        posB = self.deck[1]
+        self.deck[0], self.deck[posB] = self.deck[posB], self.deck[0]
+        return self.deck[self.deck[posA]] % 256
          
-         self.deck.insert(self.deck[1], self.deck.pop(0))
-         
-         return self.deck[self.deck[self.deck[0]]] % 256
-         
-    def encrypt_letter(self, letter):
-        num = ord(letter)
-        key = self.ksa()
+    def encrypt_byte(self, b):
+        num = ord(b)
+        key = self.update()
         num = (num ^ key)
         return chr(num)
         
-    def decrypt_letter(self, letter):
-        num = ord(letter)
-        key = self.ksa()
+    def decrypt_byte(self, b):
+        num = ord(b)
+        key = self.update()
         num = (num ^ key)
         return chr(num)
 
-    def encrypt(self, letters):
+    def encrypt(self, msg, key, nonce):
+        self.ksa(key, nonce)
         ctxt = []
-        for x in range(len(letters)):
-            letter = self.encrypt_letter(letters[x])
-            ctxt.append(letter)
+        for x in range(len(msg)):
+            b = self.encrypt_byte(msg[x])
+            ctxt.append(b)
         return "".join(ctxt)
 
-    def decrypt(self, letters):
+    def decrypt(self, ctxt, key, nonce):
+        self.ksa(key, nonce)
         ptxt = []
-        for x in range(len(letters)):
-            letter = self.decrypt_letter(letters[x])
-            ptxt.append(letter)
+        for x in range(len(ctxt)):
+            b = self.decrypt_byte(ctxt[x])
+            ptxt.append(b)
         return "".join(ptxt)
